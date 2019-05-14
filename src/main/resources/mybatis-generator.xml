@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+
+    <!--加载配置文件，为下面读取数据库信息准备-->
+    <properties resource="application-dev.properties"/>
+    <context id="Mysql" targetRuntime="MyBatis3" defaultModelType="flat">
+        <!--<plugin type="tk.mybatis.mapper.generator.MapperPlugin"> <property
+            name="mappers" value="com.example.spring_boot_test.tools.MyMapper" /> &lt;!&ndash;caseSensitive默认false，当数据库表名区分大小写时，可以将该属性设置为true&ndash;&gt;
+            <property name="caseSensitive" value="true"/> </plugin> -->
+        <!-- 这里的type里写的是你的实现类的类全路径 -->
+        <commentGenerator type="com.lottery.api.utils.MyCommentGenerator">
+        </commentGenerator>
+        <!--数据库链接地址账号密码 -->
+        <jdbcConnection driverClass="${spring.datasource.druid.driverClassName}"
+                        connectionURL="${spring.datasource.druid.url}" userId="${spring.datasource.druid.username}"
+                        password="${spring.datasource.druid.password}">
+        </jdbcConnection>
+
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false" />
+        </javaTypeResolver>
+
+        <!--生成Model类存放位置 -->
+        <javaModelGenerator targetPackage="com.lottery.api.bean"
+                            targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+            <property name="trimStrings" value="false" />
+        </javaModelGenerator>
+
+        <!--生成映射文件存放位置 <sqlMapGenerator targetPackage="mapper" targetProject="src/main/resources">
+            <property name="enableSubPackages" value="true"/> </sqlMapGenerator> -->
+
+        <!--生成Dao类存放位置 -->
+        <!-- 客户端代码，生成易于使用的针对Model对象和XML配置文件 的代码 type="ANNOTATEDMAPPER",生成Java Model
+            和基于注解的Mapper对象 type="XMLMAPPER",生成SQLMap XML文件和独立的Mapper接口 -->
+        <javaClientGenerator type="ANNOTATEDMAPPER"
+                             targetPackage="com.lottery.api.mapper" targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+        </javaClientGenerator>
+
+        <!--生成对应表及类名 去掉Mybatis Generator生成的一堆 example -->
+
+        <table tableName="foreign_interface" domainObjectName="ForeignInterface"
+               enableCountByExample="false" enableUpdateByExample="true"
+               enableDeleteByExample="false" enableSelectByExample="false"
+               selectByExampleQueryId="false">
+            <generatedKey column="name_en" sqlStatement="Mysql" identity="true" />
+        </table>
+
+    </context>
+</generatorConfiguration>

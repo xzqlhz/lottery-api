@@ -1,4 +1,4 @@
-package com.lottery.api.dlt.service;
+package com.lottery.api.service.dlt;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
