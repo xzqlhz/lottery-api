@@ -19,11 +19,12 @@ public class Test {
 
 
     @org.junit.Test
-    public void  test(){
-        JSONArray jsonArray=dltService.lottery_kj_detail_new("4","");
-        if(jsonArray.size()>0){
-            JSONObject jsonObject=jsonArray.getJSONObject(0);
-            DLT dlt=JSONObject.parseObject(jsonObject.toJSONString(),DLT.class);
+    public void test() {
+        JSONArray jsonArray = dltService.lottery_kj_detail_new("4", "");
+        if (jsonArray.size() > 0) {
+            JSONObject jsonObject = jsonArray.getJSONObject(0);
+            DLT dlt = JSONObject.parseObject(jsonObject.toJSONString(), DLT.class);
+            this.dltService.saveDLT(dlt);
         }
     }
 }

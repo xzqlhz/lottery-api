@@ -1,0 +1,175 @@
+安装服务
+mongod.exe --config "D:\mongod" --serviceName MongoDB --install 
+
+/**不执行下面三句的话，只能mongo命令行可以访问，第三方程序无法访问
+
+>var schema = db.system.version.findOne({"_id" : "authSchema"}) 
+>schema.currentVersion = 3 
+>db.system.version.save(schema) 
+
+=====================================创建管理员===========================================
+1.通过非授权的方式启动mongo
+
+2.创建admin数据库
+
+use admin
+
+3.添加管理员用户
+db.createUser({user:"admin",pwd:"123456",roles:["root"]})
+
+备注：用户名和密码可随意定
+
+4.认证
+
+db.auth("admin", "123456")
+
+=================================以授权的方式启动Mongo,给使用的数据库添加用户========================
+
+1.切换数据库
+
+use test
+
+2.创建用户
+
+db.createUser({user: "root", pwd: "123456", roles: [{ role: "dbOwner", db: "test" }]})
+
+3.通过客户端连接test数据库
+
+===================================MongoDB中用户的角色说明========================================
+MongoDB 内置角色
+(1).数据库用户角色
+针对每一个数据库进行控制。
+read :提供了读取所有非系统集合，以及系统集合中的system.indexes, system.js, system.namespaces
+readWrite: 包含了所有read权限，以及修改所有非系统集合的和系统集合中的system.js的权限.
+
+ 
+(2).数据库管理角色
+每一个数据库包含了下面的数据库管理角色。
+dbOwner：该数据库的所有者，具有该数据库的全部权限。
+dbAdmin：一些数据库对象的管理操作，但是没有数据库的读写权限。（参考：http://docs.mongodb.org/manual/reference/built-in-roles/#dbAdmin）
+userAdmin：为当前用户创建、修改用户和角色。拥有userAdmin权限的用户可以将该数据库的任意权限赋予任意的用户。
+
+ 
+(3).集群管理权限
+admin数据库包含了下面的角色，用户管理整个系统，而非单个数据库。这些权限包含了复制集和共享集群的管理函数。
+clusterAdmin：提供了最大的集群管理功能。相当于clusterManager, clusterMonitor, and hostManager和dropDatabase的权限组合。
+clusterManager：提供了集群和复制集管理和监控操作。拥有该权限的用户可以操作config和local数据库（即分片和复制功能）
+clusterMonitor：仅仅监控集群和复制集。
+hostManager：提供了监控和管理服务器的权限，包括shutdown节点，logrotate, repairDatabase等。
+备份恢复权限：admin数据库中包含了备份恢复数据的角色。包括backup、restore等等。
+
+ 
+(4).所有数据库角色
+admin数据库提供了一个mongod实例中所有数据库的权限角色：
+readAnyDatabase：具有read每一个数据库权限。但是不包括应用到集群中的数据库。
+readWriteAnyDatabase：具有readWrite每一个数据库权限。但是不包括应用到集群中的数据库。
+userAdminAnyDatabase：具有userAdmin每一个数据库权限，但是不包括应用到集群中的数据库。
+dbAdminAnyDatabase：提供了dbAdmin每一个数据库权限，但是不包括应用到集群中的数据库。
+
+(5). 超级管理员权限
+root: dbadmin到admin数据库、useradmin到admin数据库以及UserAdminAnyDatabase。但它不具有备份恢复、直接操作system.*集合的权限，但是拥有root权限的超级用户可以自己给自己赋予这些权限。
+
+(6). 备份恢复角色：backup、restore；
+(7). 内部角色：__system
+PS：关于每个角色所拥有的操作权限可以点击上面的内置角色链接查看详情。
+
+官方实例
+
+use products # mongoDB的权限设置是以库为单位的,必选要先选择库  
+db.createUser(   
+{ "user" : "accountAdmin01",   
+ "pwd": "cleartext password",  
+ "customData" : { employeeId: 12345 },  
+ "roles" : [ { role: "clusterAdmin", db: "admin" },   
+             { role: "readAnyDatabase", db: "admin" },  
+             "readWrite" ] },  
+{ w: "majority" , wtimeout: 5000 } ) # readWrite 适用于products库,clusterAdmin与readAnyDatabase角色适用于admin库  
+ 
+
+熟 悉 Oracle 的童鞋们都知道，数据库用户有两种，一种是管理员，用来管理用户，一种是普通用户，用来访问数据。类似的，为 MongoDB 规划用户鉴权时，至少要规划两种角色：用户管理员和数据库用户。如果搭建了分片或主从，可能还会要规划数据库架构管理员的角色，它们专门用来调整数据库的 分布式架构。
+
+在创建用户之前，我们首先要修改 MongoDB 的启动方式。缺省方式下 MongoDB 是不进行鉴权检查的。我们只要在运行 MongoDB 的命令后面加上一个 --auth 参数即可，例如：
+
+mongod --dbpath ./db1 --port 20000 --auth  
+ 
+
+MongoDB默认不启用安全授权机制。在单节点环境下，你需要在启动mongod时指定–auth，或者在参数里设置auth=true来启用这个特性。
+
+如果上述命令无效的话，那就 手动开启用户权限认证
+
+[gideon@ikeepstudying]$ vi /etc/mongodb.conf           //将auth=true前面的注释拿掉  
+[gideon@ikeepstudying]$ /etc/init.d/mongod restart      //重启生效  
+// 或者使用 sudo service mongod restart 重启  
+ 
+如何创建用户管理员
+用户管理员是第一个要创建的用户。在没有创建任何用户之前，你可以随意创建用户；但数据库中一旦有了用户，那么未登录的客户端就没有权限做任何操作了，除非使用db.auth(username, password)方法登录。
+
+用户管理员的角色名叫 userAdminAnyDatabase，这个角色只能在 admin 数据库中创建。下面是一个例子：
+
+> use admin  
+switched to db admin  
+> db.createUser({user:"root",pwd:"root123",roles:["userAdminAnyDatabase"]})  
+Successfully added user: { "user" : "root", "roles" : [ "userAdminAnyDatabase" ] }  
+ 
+
+这个例子创建了一个名为 root 的用户管理员。创建完了这个用户之后，我们应该马上以该用户的身份登录：
+
+> db.auth("root","root123")  
+1  
+ 
+
+db.auth() 方法返回 1 表示登录成功。接下来我们为指定的数据库创建访问所需的账号。
+
+ 
+如何创建数据库用户
+首先保证你已经以用户管理员的身份登录 admin 数据库。然后用 use 命令切换到目标数据库，同样用db.createUser() 命令来创建用户，其中角色名为 “readWrite”。
+
+普通的数据库用户角色有两种，read 和 readWrite。顾名思义，前者只能读取数据不能修改，后者可以读取和修改。
+
+下面是一个例子：
+
+> use test  
+switched to db test  
+> db.createUser({user:"testuser",pwd:"testpass",roles:["readWrite"]})  
+Successfully added user: { "user" : "testuser", "roles" : [ "readWrite" ] }  
+> db.auth("testuser","testpass")  
+1  
+ 
+
+这样 MongoDB 的数据安全性就得到保障了，没有登录的客户端将无法执行任何命令。
+
+除了db.createUser(),下面几个函数也是常用的：
+获得数据库的所有用户权限信息：db.getUsers()
+获得某个用户的权限信息：db.getUser()
+创建角色: db.createRole()
+更新角色：db.updateRole()
+删除角色：db.dropRole()
+获得某个角色信息:db.getRole()
+删除用户：db.dropUser()
+删除所有用户:db.dropAllUsers()
+将一个角色赋予给用户：db.grantRolesToUser()
+撤销某个用户的某个角色权限：db.revokeRolesFromUser()
+更改密码：db.changeUserPassword()
+
+
+@Id
+MongoDB默认会为每个document生成一个 _id 属性，作为默认主键，且默认值为ObjectId,可以更改 _id 的值(可为空字符串)，但每个document必须拥有 _id 属性。
+当然，也可以自己设置@Id主键，不过官方建议使用MongoDB自动生成。
+
+@Indexed
+声明该字段需要加索引，加索引后以该字段为条件检索将大大提高速度。 
+唯一索引的话是@Indexed(unique = true)。 
+也可以对数组进行索引，如果被索引的列是数组时，mongodb会索引这个数组中的每一个元素。
+
+@Indexed
+private String uid;
+@Transient
+被该注解标注的，将不会被录入到数据库中。只作为普通的javaBean属性。
+
+@Transient
+private String address;
+@Field
+代表一个字段，可以不加，不加的话默认以参数名为列名。
+
+@Field("firstName")
+private String name;

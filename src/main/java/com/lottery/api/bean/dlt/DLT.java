@@ -2,7 +2,6 @@ package com.lottery.api.bean.dlt;
 
 import lombok.Data;
 
-import javax.xml.soap.Detail;
 import java.util.List;
 
 @Data
